@@ -1757,6 +1757,7 @@ void resetServerStats(void) {
     server.aof_delayed_fsync = 0;
 }
 
+/* server初始化 */
 void initServer(void) {
     int j;
 
@@ -1784,6 +1785,7 @@ void initServer(void) {
 
     createSharedObjects();
     adjustOpenFilesLimit();
+    /* 创建EventLoop */
     server.el = aeCreateEventLoop(server.maxclients+REDIS_EVENTLOOP_FDSET_INCR);
     server.db = zmalloc(sizeof(redisDb)*server.dbnum);
 
@@ -2138,6 +2140,8 @@ void call(redisClient *c, int flags) {
  * If 1 is returned the client is still alive and valid and
  * other operations can be performed by the caller. Otherwise
  * if 0 is returned the client was destroyed (i.e. after QUIT). */
+
+/* 命令处理处理 */
 int processCommand(redisClient *c) {
     /* The QUIT command is handled separately. Normal command procs will
      * go through checking for replication and QUIT will cause trouble
@@ -2151,7 +2155,7 @@ int processCommand(redisClient *c) {
 
     /* Now lookup the command and check ASAP about trivial error conditions
      * such as wrong arity, bad command name and so forth. */
-    c->cmd = c->lastcmd = lookupCommand(c->argv[0]->ptr);
+    c->cmd = c->lastcmd = lookupCommand(c->argv[0]->ptr);  /* 查找命令 */
     if (!c->cmd) {
         flagTransaction(c);
         addReplyErrorFormat(c,"unknown command '%s'",
@@ -3598,19 +3602,19 @@ int main(int argc, char **argv) {
     setlocale(LC_COLLATE,"");
     zmalloc_enable_thread_safeness();
     zmalloc_set_oom_handler(redisOutOfMemoryHandler);
-    srand(time(NULL)^getpid());
+    srand(time(NULL)^getpid()); /* 设置随机算法种子数 */
     gettimeofday(&tv,NULL);
     dictSetHashFunctionSeed(tv.tv_sec^tv.tv_usec^getpid());
-    server.sentinel_mode = checkForSentinelMode(argc,argv);
+    server.sentinel_mode = checkForSentinelMode(argc,argv); /* 获取sentinel_mode 模式 对应命令为redis-sentinel */
     initServerConfig();
 
     /* We need to init sentinel right now as parsing the configuration file
      * in sentinel mode will have the effect of populating the sentinel
      * data structures with master nodes to monitor. */
     if (server.sentinel_mode) {
-        initSentinelConfig();
-        initSentinel();
-    }
+        initSentinelConfig(); /* 切换端口 */
+        initSentinel();   /* 更换服务命令 */
+    } 
 
     if (argc >= 2) {
         int j = 1; /* First option to parse in argv[] */
@@ -3667,7 +3671,7 @@ int main(int argc, char **argv) {
     } else {
         redisLog(REDIS_WARNING, "Warning: no config file specified, using the default config. In order to specify a config file use %s /path/to/%s.conf", argv[0], server.sentinel_mode ? "sentinel" : "redis");
     }
-    if (server.daemonize) daemonize();
+    if (server.daemonize) daemonize(); /* 以daemon 方式运行 */
     initServer();
     if (server.daemonize) createPidFile();
     redisSetProcTitle(argv[0]);
@@ -3703,7 +3707,7 @@ int main(int argc, char **argv) {
     }
 
     aeSetBeforeSleepProc(server.el,beforeSleep);
-    aeMain(server.el);
+    aeMain(server.el); /* 主循环处理*/
     aeDeleteEventLoop(server.el);
     return 0;
 }

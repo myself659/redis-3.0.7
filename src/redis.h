@@ -526,6 +526,7 @@ typedef struct readyList {
 
 /* With multiplexing we need to take per-client state.
  * Clients are taken in a linked list. */
+ /* 与client端的连接 */
 typedef struct redisClient {
     uint64_t id;            /* Client incremental unique ID. */
     int fd;
@@ -932,20 +933,23 @@ typedef struct pubsubPattern {
 
 typedef void redisCommandProc(redisClient *c);
 typedef int *redisGetKeysProc(struct redisCommand *cmd, robj **argv, int argc, int *numkeys);
+/* redis 命令  */
 struct redisCommand {
-    char *name;
-    redisCommandProc *proc;
-    int arity;
-    char *sflags; /* Flags as string representation, one char per flag. */
+    char *name;               /* 命令名字 */
+    redisCommandProc *proc;  /* 命令处理 */
+    int arity;             /* command的操作数，>0时表示确切的操作数，<0则表示至少有arity个操作数  */
+    /* 标记位的字符表示形式，主要用于命令表的初始化  */
+    char *sflags; /* Flags as string representation, one char per flag.  */
     int flags;    /* The actual flags, obtained from the 'sflags' field. */
     /* Use a function to determine keys arguments in a command line.
      * Used for Redis Cluster redirect. */
-    redisGetKeysProc *getkeys_proc;
+    redisGetKeysProc *getkeys_proc; /* 获得key的函数指针  */
     /* What keys should be loaded in background when calling this command? */
     int firstkey; /* The first argument that's a key (0 = no keys) */
     int lastkey;  /* The last argument that's a key */
     int keystep;  /* The step between first and last key */
-    long long microseconds, calls;
+    long long microseconds;
+    long long calls;
 };
 
 struct redisFunctionSym {

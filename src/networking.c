@@ -61,6 +61,7 @@ int listMatchObjects(void *a, void *b) {
     return equalStringObjects(a,b);
 }
 
+
 redisClient *createClient(int fd) {
     redisClient *c = zmalloc(sizeof(redisClient));
 
@@ -73,6 +74,7 @@ redisClient *createClient(int fd) {
         anetEnableTcpNoDelay(NULL,fd);
         if (server.tcpkeepalive)
             anetKeepAlive(NULL,fd,server.tcpkeepalive);
+        /* 添加File事件 */    
         if (aeCreateFileEvent(server.el,fd,AE_READABLE,
             readQueryFromClient, c) == AE_ERR)
         {
@@ -582,6 +584,8 @@ void copyClientOutputBuffer(redisClient *dst, redisClient *src) {
 }
 
 #define MAX_ACCEPTS_PER_CALL 1000
+
+/*  客户端连接处理 */
 static void acceptCommonHandler(int fd, int flags) {
     redisClient *c;
     if ((c = createClient(fd)) == NULL) {
@@ -610,6 +614,7 @@ static void acceptCommonHandler(int fd, int flags) {
     c->flags |= flags;
 }
 
+/* tcp 连接acccept 处理 */
 void acceptTcpHandler(aeEventLoop *el, int fd, void *privdata, int mask) {
     int cport, cfd, max = MAX_ACCEPTS_PER_CALL;
     char cip[REDIS_IP_STR_LEN];
@@ -1151,6 +1156,7 @@ void processInputBuffer(redisClient *c) {
     }
 }
 
+/* client端请求处理 */
 void readQueryFromClient(aeEventLoop *el, int fd, void *privdata, int mask) {
     redisClient *c = (redisClient*) privdata;
     int nread, readlen;
