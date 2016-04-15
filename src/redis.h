@@ -665,6 +665,7 @@ struct clusterState;
 #undef hz
 #endif
 
+/*  redis server ÊµÀıÃèÊö */
 struct redisServer {
     /* General */
     pid_t pid;                  /* Main process pid. */

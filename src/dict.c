@@ -520,6 +520,7 @@ void *dictFetchValue(dict *d, const void *key) {
  * the fingerprint again when the iterator is released.
  * If the two fingerprints are different it means that the user of the iterator
  * performed forbidden operations against the dictionary while iterating. */
+ /* 根据hash表信息生成hash  */
 long long dictFingerprint(dict *d) {
     long long integers[6], hash = 0;
     int j;
@@ -575,31 +576,33 @@ dictIterator *dictGetSafeIterator(dict *d) {
 dictEntry *dictNext(dictIterator *iter)
 {
     while (1) {
+    	/* 没有表项 */
         if (iter->entry == NULL) {
             dictht *ht = &iter->d->ht[iter->table];
-            if (iter->index == -1 && iter->table == 0) {
+            if (iter->index == -1 && iter->table == 0) {/* 是否为初始化状态 */
                 if (iter->safe)
-                    iter->d->iterators++;
+                    iter->d->iterators++; /*  字典的迭代器计数加1 */
                 else
                     iter->fingerprint = dictFingerprint(iter->d);
             }
-            iter->index++;
-            if (iter->index >= (long) ht->size) {
+            iter->index++; /* hash index 计数加1 */
+            if (iter->index >= (long) ht->size) {/* 迭代的hash index 超过了hash表的size */
                 if (dictIsRehashing(iter->d) && iter->table == 0) {
-                    iter->table++;
-                    iter->index = 0;
-                    ht = &iter->d->ht[1];
+                    iter->table++; /* 切换hash table */
+                    iter->index = 0;/* hash index 从0开始 */
+                    ht = &iter->d->ht[1]; // ht = &iter->d->ht[iter->table];
                 } else {
                     break;
                 }
             }
-            iter->entry = ht->table[iter->index];
+            iter->entry = ht->table[iter->index];/* 获取表项 */
         } else {
             iter->entry = iter->nextEntry;
         }
         if (iter->entry) {
             /* We need to save the 'next' here, the iterator user
              * may delete the entry we are returning. */
+             /* 保存下一个表项，当前表项可能在迭代过程被删除  可以参考一个链表在遍历过程删除当前链表的情况 */
             iter->nextEntry = iter->entry->next;
             return iter->entry;
         }
@@ -613,7 +616,7 @@ void dictReleaseIterator(dictIterator *iter)
         if (iter->safe)
             iter->d->iterators--;
         else
-            assert(iter->fingerprint == dictFingerprint(iter->d));
+            assert(iter->fingerprint == dictFingerprint(iter->d)); 
     }
     zfree(iter);
 }

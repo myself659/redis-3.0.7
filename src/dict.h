@@ -44,6 +44,7 @@
 /* Unused arguments generate annoying warnings... */
 #define DICT_NOTUSED(V) ((void) V)
 
+/* dict项 */
 typedef struct dictEntry {
     void *key;
     union {
@@ -55,6 +56,9 @@ typedef struct dictEntry {
     struct dictEntry *next;
 } dictEntry;
 
+/* dict 类型
+每个dict都拥有一个自己dictType，使得每个dict不同，如hash函数不同，键值复制，比较不同等等，使得dict的用途多元化
+*/
 typedef struct dictType {
     unsigned int (*hashFunction)(const void *key);
     void *(*keyDup)(void *privdata, const void *key);
@@ -66,6 +70,7 @@ typedef struct dictType {
 
 /* This is our hash table structure. Every dictionary has two of this as we
  * implement incremental rehashing, for the old to the new table. */
+ /* dict hash table */
 typedef struct dictht {
     dictEntry **table;
     unsigned long size;
@@ -73,24 +78,29 @@ typedef struct dictht {
     unsigned long used;
 } dictht;
 
+/* 字典 */
 typedef struct dict {
     dictType *type;
     void *privdata;
     dictht ht[2];
     long rehashidx; /* rehashing not in progress if rehashidx == -1 */
-    int iterators; /* number of iterators currently running */
+    int iterators; /* number of iterators currently running  */
 } dict;
 
 /* If safe is set to 1 this is a safe iterator, that means, you can call
  * dictAdd, dictFind, and other functions against the dictionary even while
  * iterating. Otherwise it is a non safe iterator, and only dictNext()
  * should be called while iterating. */
+ /*  dict迭代器  */
 typedef struct dictIterator {
     dict *d;
-    long index;
-    int table, safe;
-    dictEntry *entry, *nextEntry;
+    long index; /* 迭代个数 */
+    int table; /* hash table index */
+    int safe; /* 是否为安全的迭代 为1表示安全迭代 */
+    dictEntry *entry; 
+    dictEntry *nextEntry;
     /* unsafe iterator fingerprint for misuse detection. */
+    /* 对比迭代前与迭代后根据hash 信息计算的hash值是否一致，如果不一致则表示出现错误 */
     long long fingerprint;
 } dictIterator;
 
